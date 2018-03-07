@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Programming Assignment 4</title>
+    <meta charset="utf-8">
+    <meta name="author" content="Dine Mamadou" />
+    <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
+    <link href="libs/remark-css-0.0.1/default-fonts.css" rel="stylesheet" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Programming Assignment 4
+## Project management, tidying data, HTML Presentations
+### Dine Mamadou
+### 2018/3/6
+
+---
+
+(1-4).Data overview
+
+
+
+```r
+library(tidyverse)
+library(xaringan)
+library(plot3D)
+library(ggfortify)
+
+
+fricatives &lt;- read.csv("fricatives.csv")
+
+
+
+str(fricatives)
+```
+
+```
+## 'data.frame':	20 obs. of  5 variables:
+##  $ obs        : int  1 2 3 4 5 6 7 8 9 10 ...
+##  $ s_cog      : num  3285 4664 4680 4874 4879 ...
+##  $ s_skewness : num  -1.22 -1.19 -1.07 -1.06 -1.03 ...
+##  $ sh_cog     : num  2409 2823 2898 3617 3668 ...
+##  $ sh_skewness: num  -0.2481 -0.0165 0.1177 0.1978 0.2118 ...
+```
+---
+5.Tidy data sample
+  
+
+```r
+my_data1 &lt;- fricatives %&gt;%
+  select(., alveolar = s_cog, postAlveolar = sh_cog) %&gt;%
+  gather(., key = phoneme, value = centerOfGravity) 
+
+my_data2 &lt;- fricatives %&gt;%
+  select(., alveolar = s_skewness, postAlveolar = sh_skewness) %&gt;%
+  gather(., key = phoneme, value = skewness)
+```
+
+---
+6.Descriptive Stats
+
+
+```r
+fricatives %&gt;%
+  select(., -obs) %&gt;%
+  summary() %&gt;%
+  knitr::kable(., digits = 2)
+```
+
+         s_cog        s_skewness          sh_cog      sh_skewness    
+---  -------------  ----------------  -------------  ----------------
+     Min.   :3285   Min.   :-1.2153   Min.   :2409   Min.   :-0.2481 
+     1st Qu.:5116   1st Qu.:-0.9699   1st Qu.:3680   1st Qu.: 0.2498 
+     Median :5860   Median :-0.7800   Median :3956   Median : 0.5315 
+     Mean   :5691   Mean   :-0.7714   Mean   :3995   Mean   : 0.5527 
+     3rd Qu.:6259   3rd Qu.:-0.6095   3rd Qu.:4525   3rd Qu.: 0.7239 
+     Max.   :7095   Max.   :-0.1269   Max.   :5087   Max.   : 1.5187 
+
+
+---
+7.COG as a function of phoneme (Boxplot)
+
+
+```r
+my_data1 %&gt;%
+  ggplot(., aes(x = phoneme, y = centerOfGravity)) +
+    geom_boxplot()
+```
+
+&lt;img src="index_files/figure-html/unnamed-chunk-3-1.png" width="720" /&gt;
+
+---
+7.1 Skewness as a function of phoneme (Jitter)
+
+
+```r
+my_data2 %&gt;%
+  ggplot(., aes(x = phoneme, y = skewness)) +
+  geom_jitter() 
+```
+
+&lt;img src="index_files/figure-html/unnamed-chunk-4-1.png" width="720" /&gt;
+---
+8.COG as a function of Skewness for [s] and scatter plot
+
+8.1 The data
+
+```r
+phonemeS &lt;- fricatives %&gt;%
+  select(., cog = s_cog, skewness = s_skewness) 
+
+head(phonemeS)
+```
+
+```
+##        cog   skewness
+## 1 3285.300 -1.2152771
+## 2 4664.371 -1.1854471
+## 3 4679.532 -1.0676233
+## 4 4873.546 -1.0610645
+## 5 4878.759 -1.0342092
+## 6 5194.612 -0.9485275
+```
+---
+8.2 The model 
+
+
+```r
+lm(cog ~ skewness, data = phonemeS)
+```
+
+```
+## 
+## Call:
+## lm(formula = cog ~ skewness, data = phonemeS)
+## 
+## Coefficients:
+## (Intercept)     skewness  
+##        8027         3029
+```
+
+```r
+mod &lt;- lm(cog ~ skewness, data = phonemeS)
+```
+---
+8.3 Model summary
+
+```r
+summary(mod)
+```
+
+```
+## 
+## Call:
+## lm(formula = cog ~ skewness, data = phonemeS)
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -1060.74   -21.72    58.96   123.00   405.24 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)   8027.2      212.3   37.80  &lt; 2e-16 ***
+## skewness      3029.1      259.1   11.69 7.69e-10 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 320.1 on 18 degrees of freedom
+## Multiple R-squared:  0.8836,	Adjusted R-squared:  0.8771 
+## F-statistic: 136.6 on 1 and 18 DF,  p-value: 7.691e-10
+```
+
+```r
+mean(mod$residuals)
+```
+
+```
+## [1] 1.136591e-14
+```
+---
+9 Scatterplot
+
+```r
+mod %&gt;%
+  ggplot(., aes(x = cog, y = skewness)) +
+  geom_point() +
+  geom_smooth()
+```
+
+```
+## `geom_smooth()` using method = 'loess'
+```
+
+![](index_files/figure-html/unnamed-chunk-8-1.png)&lt;!-- --&gt;
+---
+
+10.Model diagnistics
+
+10.1 Autoskedasticity
+
+```r
+lmtest::dwtest(mod)
+```
+
+```
+## 
+## 	Durbin-Watson test
+## 
+## data:  mod
+## DW = 1.3028, p-value = 0.02841
+## alternative hypothesis: true autocorrelation is greater than 0
+```
+---
+10.2 Normality
+
+```r
+autoplot(mod)
+```
+
+![](index_files/figure-html/unnamed-chunk-10-1.png)&lt;!-- --&gt;
+---
+10.3 Autocorrelation of residuals
+
+```r
+acf(mod$res)
+```
+
+&lt;img src="index_files/figure-html/unnamed-chunk-11-1.png" width="720" /&gt;
+---
+11.Interpretation of the results
+
+The mean of the fitted model is 1.13 to the -10th power. The plot of the skewness as a function of the phoneme shows on one hand that the anteriority of the phoneme determines the direction of its skewness; that is, alveolars /s/ are negatively skewed while post-alveolars /sh/ are positively skewed. On the other hand, the center of gravity is higher for alveolars than it is for post-alveolars.
+
+The scatterplot shows a positive correlation between skewness and center of gravity (cog) for the phoneme /s/. Skewness is shown to be a good predictors of cog as it significantly affect the model at p &lt; 0.001.
+    </textarea>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": true
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function() {
+  var d = document, s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})();</script>
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {
+    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+  }
+});
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://cdn.bootcss.com/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

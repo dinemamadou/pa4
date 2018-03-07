@@ -1,0 +1,141 @@
+---
+title: "Programming Assignment 4"
+subtitle: "Project management, tidying data, HTML Presentations"
+author: "Dine Mamadou"
+date: "2018/3/6"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: TRUE
+---
+(1-4).Data overview
+
+
+```{r load_library, message=FALSE, warning=FALSE, include=TRUE}
+library(tidyverse)
+library(xaringan)
+library(plot3D)
+library(ggfortify)
+
+
+fricatives <- read.csv("fricatives.csv")
+
+
+
+str(fricatives)
+
+```
+---
+5.Tidy data sample
+  
+```{r}
+my_data1 <- fricatives %>%
+  select(., alveolar = s_cog, postAlveolar = sh_cog) %>%
+  gather(., key = phoneme, value = centerOfGravity) 
+
+my_data2 <- fricatives %>%
+  select(., alveolar = s_skewness, postAlveolar = sh_skewness) %>%
+  gather(., key = phoneme, value = skewness)
+
+```
+
+---
+6.Descriptive Stats
+
+```{r, fig.width = 10, fig.retina = 2}
+fricatives %>%
+  select(., -obs) %>%
+  summary() %>%
+  knitr::kable(., digits = 2)
+
+
+```
+
+
+---
+7.COG as a function of phoneme (Boxplot)
+
+```{r, fig.width = 10, fig.retina = 2}
+my_data1 %>%
+  ggplot(., aes(x = phoneme, y = centerOfGravity)) +
+    geom_boxplot()
+```
+
+---
+7.1 Skewness as a function of phoneme (Jitter)
+
+```{r, fig.width = 10, fig.retina = 2}
+my_data2 %>%
+  ggplot(., aes(x = phoneme, y = skewness)) +
+  geom_jitter() 
+```
+---
+8.COG as a function of Skewness for [s] and scatter plot
+
+8.1 The data
+```{r}
+phonemeS <- fricatives %>%
+  select(., cog = s_cog, skewness = s_skewness) 
+
+head(phonemeS)
+
+```
+---
+8.2 The model 
+
+```{r, fig.width = 10, fig.retina = 2}
+lm(cog ~ skewness, data = phonemeS)
+mod <- lm(cog ~ skewness, data = phonemeS)
+
+
+```
+---
+8.3 Model summary
+```{r}
+summary(mod)
+mean(mod$residuals)
+
+
+```
+---
+9 Scatterplot
+```{r}
+
+mod %>%
+  ggplot(., aes(x = cog, y = skewness)) +
+  geom_point() +
+  geom_smooth()
+  
+
+```
+---
+
+10.Model diagnistics
+
+10.1 Autoskedasticity
+```{r, fig.width = 10, fig.retina = 2}
+
+lmtest::dwtest(mod)
+
+```
+---
+10.2 Normality
+```{r}
+autoplot(mod)
+
+```
+---
+10.3 Autocorrelation of residuals
+```{r, fig.width = 10, fig.retina = 2}
+
+acf(mod$res)
+```
+---
+11.Interpretation of the results
+
+The mean of the fitted model is 1.13 to the -10th power. The plot of the skewness as a function of the phoneme shows on one hand that the anteriority of the phoneme determines the direction of its skewness; that is, alveolars /s/ are negatively skewed while post-alveolars /sh/ are positively skewed. On the other hand, the center of gravity is higher for alveolars than it is for post-alveolars.
+
+The scatterplot shows a positive correlation between skewness and center of gravity (cog) for the phoneme /s/. Skewness is shown to be a good predictors of cog as it significantly affect the model at p < 0.001. 
